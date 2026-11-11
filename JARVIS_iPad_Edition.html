@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050b16">
+<title>JARVIS — Personal Command Centre</title>
+<style>
+:root{--bg:#050b16;--panel:#0a1728;--panel2:#0d2035;--line:rgba(67,190,255,.25);--blue:#49c8ff;--cyan:#8be8ff;--muted:#8aa9c1;--white:#eaf8ff;--green:#63efb0;--red:#ff7d91}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% -20%,#12395b 0%,#071323 42%,var(--bg) 78%);color:var(--white);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+button,input,textarea{font:inherit}
+button{cursor:pointer;color:inherit}
+.app{max-width:1100px;margin:auto;padding:env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:center;padding:18px 2px 14px;border-bottom:1px solid var(--line)}
+.brand{letter-spacing:.28em;font-size:14px;color:var(--cyan);font-weight:800}
+.sub{font-size:10px;letter-spacing:.18em;color:var(--muted);margin-top:5px}
+.status{font-size:11px;color:var(--green);border:1px solid rgba(99,239,176,.35);padding:7px 10px;border-radius:20px}
+.hero{text-align:center;padding:28px 0 22px}
+.orb{width:156px;height:156px;border-radius:50%;margin:0 auto 16px;display:grid;place-items:center;position:relative;background:radial-gradient(circle,#123e5d 0%,#07182a 54%,#07101e 70%);border:1px solid rgba(73,200,255,.6);box-shadow:0 0 24px rgba(73,200,255,.18),inset 0 0 28px rgba(73,200,255,.12)}
+.orb:before,.orb:after{content:"";position:absolute;border:1px solid rgba(73,200,255,.5);border-radius:50%;inset:-9px;animation:spin 16s linear infinite}
+.orb:after{inset:-17px;border-style:dashed;opacity:.45;animation-direction:reverse;animation-duration:28s}
+.orb.listening{box-shadow:0 0 45px rgba(73,200,255,.55),inset 0 0 35px rgba(73,200,255,.25)}
+.orb.listening:before{animation-duration:3s}
+.core{font-size:42px;color:var(--cyan);text-shadow:0 0 18px var(--blue)}
+@keyframes spin{to{transform:rotate(360deg)}}
+h1{font-size:26px;letter-spacing:.22em;margin:0}
+.tagline{font-size:12px;color:var(--muted);margin-top:8px}
+.clock{font-size:22px;letter-spacing:.1em;margin-top:16px;font-variant-numeric:tabular-nums}
+.date{font-size:11px;color:var(--muted);margin-top:4px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.panel{background:linear-gradient(145deg,rgba(13,32,53,.95),rgba(7,19,34,.95));border:1px solid var(--line);border-radius:16px;padding:15px;min-width:0;box-shadow:0 8px 28px rgba(0,0,0,.16)}
+.panel h2{font-size:12px;letter-spacing:.15em;color:var(--cyan);margin:0 0 13px;text-transform:uppercase}
+.wide{grid-column:1/-1}
+.chatlog{height:180px;overflow:auto;display:flex;flex-direction:column;gap:9px;padding:2px 1px 10px}
+.msg{font-size:13px;line-height:1.5;padding:9px 11px;border-radius:12px;max-width:92%;white-space:pre-wrap}
+.msg.ai{background:#102c45;border:1px solid rgba(73,200,255,.18);align-self:flex-start}
+.msg.user{background:#123b52;border:1px solid rgba(139,232,255,.22);align-self:flex-end}
+.chatrow{display:flex;gap:8px}
+input,textarea{width:100%;background:#061321;border:1px solid var(--line);border-radius:10px;color:var(--white);padding:12px;outline:none}
+input:focus,textarea:focus{border-color:var(--blue)}
+.btn{border:1px solid rgba(73,200,255,.4);background:#0e2c45;border-radius:10px;padding:11px 13px;color:var(--cyan);font-size:12px}
+.btn.primary{background:linear-gradient(135deg,#1476a7,#0b4268);color:white}
+.btn:active{transform:scale(.98)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.stat{font-size:25px;color:var(--white);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted);font-size:11px;line-height:1.5}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid rgba(67,190,255,.12);font-size:12px}
+.row:last-child{border-bottom:0}
+.list{max-height:170px;overflow:auto}
+.task{display:flex;align-items:center;gap:8px}
+.task input{width:auto;accent-color:#49c8ff}
+.task span{flex:1}
+.smallbtn{background:transparent;border:0;color:var(--red);font-size:17px;padding:2px 7px}
+.market-note{padding:9px;background:rgba(255,196,94,.08);border:1px solid rgba(255,196,94,.2);border-radius:9px;color:#ffd58a;font-size:10px;line-height:1.5;margin-bottom:10px}
+.quick{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.quick button{min-height:48px;text-align:left}
+footer{text-align:center;color:#55758d;font-size:10px;letter-spacing:.12em;padding:22px 0 8px}
+@media(min-width:760px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.wide{grid-column:span 2}.hero{padding:34px 0 28px}.orb{width:176px;height:176px}}
+@media(max-width:370px){.app{padding-left:11px;padding-right:11px}.panel{padding:12px}.orb{width:138px;height:138px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div><div class="brand">J.A.R.V.I.S.</div><div class="sub">PERSONAL COMMAND SYSTEM · V1.0</div></div>
+  <div class="status">● SYSTEM READY</div>
+</header>
+
+<section class="hero">
+  <div class="orb" id="orb"><div class="core">◉</div></div>
+  <h1>JARVIS</h1>
+  <div class="tagline" id="state">AWAITING YOUR COMMAND</div>
+  <div class="clock" id="clock">--:--:--</div>
+  <div class="date" id="date"></div>
+</section>
+
+<div class="grid">
+  <section class="panel wide">
+    <h2>AI communication</h2>
+    <div class="chatlog" id="chatlog" aria-live="polite">
+      <div class="msg ai">Good day. JARVIS local edition is online. I can manage notes and tasks, speak responses, and help with basic business and market research workflows. How may I assist?</div>
+    </div>
+    <div class="chatrow">
+      <input id="command" placeholder="Type a command..." autocomplete="off">
+      <button class="btn primary" id="send">SEND</button>
+    </div>
+    <div class="controls">
+      <button class="btn" id="mic">🎙 SPEAK</button>
+      <button class="btn" id="stop">■ STOP VOICE</button>
+      <button class="btn" id="clear">CLEAR CHAT</button>
+    </div>
+    <div class="muted" style="margin-top:8px">Voice recognition depends on Safari/iPadOS support and microphone permission. Text input always works.</div>
+  </section>
+
+  <section class="panel">
+    <h2>System status</h2>
+    <div class="row"><span>Interface</span><span style="color:var(--green)">ONLINE</span></div>
+    <div class="row"><span>Local memory</span><span id="memoryStatus">READY</span></div>
+    <div class="row"><span>Voice input</span><span id="voiceStatus">CHECKING</span></div>
+    <div class="row"><span>Network</span><span id="networkStatus">—</span></div>
+    <div class="row"><span>AI connection</span><span style="color:#ffd58a">NOT CONNECTED</span></div>
+  </section>
+
+  <section class="panel">
+    <h2>Quick commands</h2>
+    <div class="quick">
+      <button class="btn" data-cmd="What can you do?">Capabilities</button>
+      <button class="btn" data-cmd="Give me a business checklist">Business checklist</button>
+      <button class="btn" data-cmd="Explain how to research a stock">Stock research</button>
+      <button class="btn" data-cmd="What time is it?">Time</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Business planner</h2>
+    <div class="muted">Capture an idea or next action.</div>
+    <textarea id="businessInput" rows="3" placeholder="Business idea or action..."></textarea>
+    <div class="controls"><button class="btn primary" id="saveBusiness">SAVE IDEA</button></div>
+    <div class="list" id="businessList"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Task manager</h2>
+    <div class="chatrow"><input id="taskInput" placeholder="Add a task..."><button class="btn" id="addTask">+</button></div>
+    <div class="list" id="taskList"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Stock watchlist</h2>
+    <div class="market-note">Watchlist only. No live prices or trading orders are connected in this version. Verify all market data with NSE/BSE or your broker.</div>
+    <div class="chatrow"><input id="stockInput" placeholder="Symbol e.g. RELIANCE"><button class="btn" id="addStock">+</button></div>
+    <div class="list" id="stockList"></div>
+  </section>
+
+  <section class="panel wide">
+    <h2>Personal notes</h2>
+    <textarea id="notes" rows="4" placeholder="JARVIS notes..."></textarea>
+    <div class="muted" id="noteSaved">Saved on this iPad automatically.</div>
+  </section>
+</div>
+<footer>JARVIS LOCAL EDITION · YOUR DATA STAYS IN THIS BROWSER</footer>
+</div>
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(key, fallback) { try { const v=localStorage.getItem("jarvis_"+key); return v===null?fallback:JSON.parse(v); } catch(e){return fallback;} },
+    set(key, value) { try { localStorage.setItem("jarvis_"+key, JSON.stringify(value)); $("memoryStatus").textContent="SAVED"; } catch(e){ $("memoryStatus").textContent="UNAVAILABLE"; } }
+  };
+
+  function tick(){
+    const now=new Date();
+    $("clock").textContent=now.toLocaleTimeString([], {hour12:false});
+    $("date").textContent=now.toLocaleDateString([], {weekday:"long",year:"numeric",month:"long",day:"numeric"});
+    $("networkStatus").textContent=navigator.onLine?"CONNECTED":"OFFLINE";
+  }
+  tick(); setInterval(tick,1000);
+  window.addEventListener("online",tick); window.addEventListener("offline",tick);
+
+  let tasks=store.get("tasks",[]);
+  let ideas=store.get("ideas",[]);
+  let stocks=store.get("stocks",["NIFTY 50","SENSEX"]);
+  $("notes").value=store.get("notes","");
+  const log=$("chatlog");
+
+  function addMessage(text, who="ai"){
+    const el=document.createElement("div"); el.className="msg "+who; el.textContent=text;
+    log.appendChild(el); log.scrollTop=log.scrollHeight;
+  }
+  function speak(text){
+    if(!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance=new SpeechSynthesisUtterance(text);
+    utterance.rate=1; utterance.pitch=0.95;
+    window.speechSynthesis.speak(utterance);
+  }
+  function reply(text){addMessage(text,"ai");speak(text);}
+  function handleCommand(raw){
+    const q=raw.trim(); if(!q)return;
+    addMessage(q,"user"); $("command").value="";
+    const s=q.toLowerCase();
+    let answer;
+    if(/hello|hi jarvis|hey jarvis|good morning|good evening/.test(s)){
+      answer="Hello. I am online and ready. What would you like to work on?";
+    } else if(/what can you do|capabilities|help/.test(s)){
+      answer="I can speak responses, save notes, store business ideas, manage tasks, and maintain a stock watchlist. This local edition does not yet connect to a cloud AI model, live market feeds, or trading accounts.";
+    } else if(/time|date/.test(s)){
+      answer="The current iPad time is "+new Date().toLocaleString()+".";
+    } else if(/business checklist|start a business/.test(s)){
+      answer="Business checklist: identify a customer problem; validate demand with interviews; study competitors; estimate startup costs and margins; check registrations and tax requirements; test with a small pilot; track revenue, expenses and customer feedback.";
+    } else if(/stock research|research a stock|analyse a stock|analyze a stock/.test(s)){
+      answer="Stock research checklist: understand the business model; review revenue and profit growth; examine debt and cash flow; compare valuation with peers; assess management and risks; read exchange filings; define your time horizon. I do not have live quotes in this edition, and this is not a buy or sell recommendation.";
+    } else if(/nifty|sensex|market/.test(s)){
+      answer="I can store symbols in your watchlist, but live NSE/BSE prices are not connected yet. Please verify current quotes and filings through official exchange sources or your broker.";
+    } else if(/thank/.test(s)){
+      answer="You're welcome. Always ready to assist.";
+    } else {
+      answer="I have stored your message in this chat, but this offline starter does not yet have a connected language-model brain. You can use the business planner, notes, tasks and watchlist below. A secure AI connection can be added in a later version.";
+    }
+    window.setTimeout(()=>reply(answer),180);
+  }
+  $("send").addEventListener("click",()=>handleCommand($("command").value));
+  $("command").addEventListener("keydown",e=>{if(e.key==="Enter")handleCommand($("command").value);});
+  document.querySelectorAll("[data-cmd]").forEach(b=>b.addEventListener("click",()=>handleCommand(b.dataset.cmd)));
+  $("clear").addEventListener("click",()=>{log.innerHTML="";addMessage("Conversation cleared. Ready for your next command.");});
+  $("stop").addEventListener("click",()=>{if("speechSynthesis" in window)window.speechSynthesis.cancel();if(recognition)recognition.stop();$("state").textContent="AWAITING YOUR COMMAND";$("orb").classList.remove("listening");});
+
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  let recognition=null;
+  if(SpeechRecognition){
+    recognition=new SpeechRecognition(); recognition.lang="en-IN"; recognition.continuous=false; recognition.interimResults=false;
+    recognition.onstart=()=>{$("state").textContent="LISTENING...";$("orb").classList.add("listening");};
+    recognition.onend=()=>{$("state").textContent="AWAITING YOUR COMMAND";$("orb").classList.remove("listening");};
+    recognition.onerror=e=>{addMessage("Voice input error: "+e.error+". You can type your command instead.");};
+    recognition.onresult=e=>{const heard=e.results[0][0].transcript;$("command").value=heard;handleCommand(heard);};
+    $("voiceStatus").textContent="AVAILABLE";
+    $("mic").addEventListener("click",()=>{try{recognition.start();}catch(e){addMessage("Voice input is already active. Please try again.");}});
+  } else {
+    $("voiceStatus").textContent="UNSUPPORTED";
+    $("mic").addEventListener("click",()=>addMessage("Speech recognition is not available in this browser session. Please type your command."));
+  }
+
+  function renderTasks(){
+    $("taskList").innerHTML="";
+    tasks.forEach((t,i)=>{
+      const row=document.createElement("div");row.className="row task";
+      const cb=document.createElement("input");cb.type="checkbox";cb.checked=!!t.done;
+      cb.addEventListener("change",()=>{tasks[i].done=cb.checked;store.set("tasks",tasks);renderTasks();});
+      const label=document.createElement("span");label.textContent=t.text; if(t.done)label.style.textDecoration="line-through";
+      const del=document.createElement("button");del.className="smallbtn";del.textContent="×";del.setAttribute("aria-label","Delete task");
+      del.addEventListener("click",()=>{tasks.splice(i,1);store.set("tasks",tasks);renderTasks();});
+      row.append(cb,label,del);$("taskList").appendChild(row);
+    });
+  }
+  function addTask(){const v=$("taskInput").value.trim();if(!v)return;tasks.push({text:v,done:false});$("taskInput").value="";store.set("tasks",tasks);renderTasks();}
+  $("addTask").addEventListener("click",addTask);
+  $("taskInput").addEventListener("keydown",e=>{if(e.key==="Enter")addTask();});
+
+  function renderIdeas(){
+    $("businessList").innerHTML="";
+    ideas.forEach((v,i)=>{const row=document.createElement("div");row.className="row";const label=document.createElement("span");label.textContent=v;const del=document.createElement("button");del.className="smallbtn";del.textContent="×";del.addEventListener("click",()=>{ideas.splice(i,1);store.set("ideas",ideas);renderIdeas();});row.append(label,del);$("businessList").appendChild(row);});
+  }
+  $("saveBusiness").addEventListener("click",()=>{const v=$("businessInput").value.trim();if(!v)return;ideas.unshift(v);$("businessInput").value="";store.set("ideas",ideas);renderIdeas();});
+
+  function renderStocks(){
+    $("stockList").innerHTML="";
+    stocks.forEach((v,i)=>{const row=document.createElement("div");row.className="row";const label=document.createElement("span");label.textContent=v;const del=document.createElement("button");del.className="smallbtn";del.textContent="×";del.addEventListener("click",()=>{stocks.splice(i,1);store.set("stocks",stocks);renderStocks();});row.append(label,del);$("stockList").appendChild(row);});
+  }
+  $("addStock").addEventListener("click",()=>{const v=$("stockInput").value.trim().toUpperCase();if(!v)return;if(!stocks.includes(v))stocks.push(v);$("stockInput").value="";store.set("stocks",stocks);renderStocks();});
+  $("stockInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("addStock").click();});
+
+  $("notes").addEventListener("input",()=>{store.set("notes",$("notes").value);$("noteSaved").textContent="Saved locally on this iPad.";});
+  renderTasks();renderIdeas();renderStocks();
+})();
+</script>
+</body>
+</html>
